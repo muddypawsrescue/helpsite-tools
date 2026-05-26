@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Behavior Medication Dosage Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f2ec;
+    --surface: #fffdf8;
+    --surface2: #f0ede6;
+    --border: #d8d2c4;
+    --border-strong: #b5ae9e;
+    --ink: #1e1b16;
+    --ink2: #4a4540;
+    --ink3: #8a8278;
+    --accent: #2d5a3d;
+    --accent-light: #e8f2eb;
+    --accent2: #8b4513;
+    --warn: #c44b1b;
+    --warn-light: #fdf0ea;
+    --pill-low: #3a6b4a;
+    --pill-med: #1a4a6b;
+    --pill-high: #7a3030;
+    --gold: #b8860b;
+    --gold-light: #fdf6e3;
+  }
+
+  body {
+    font-family: 'DM Sans', 'Helvetica Neue', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    /* No min-height: 100vh — allows iframe to size to content */
+    padding: 1.5rem 1rem 2rem;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  header {
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .header-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .title-block h1 {
+    font-family: 'DM Serif Display', Georgia, 'Times New Roman', serif;
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    color: var(--ink);
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+
+  .title-block h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .title-block p {
+    font-size: 0.88rem;
+    color: var(--ink3);
+    margin-top: 0.4rem;
+    font-weight: 300;
+    letter-spacing: 0.02em;
+  }
+
+  .badge {
+    background: var(--warn-light);
+    border: 1px solid #e8b89a;
+    color: var(--warn);
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+    margin-top: 0.3rem;
+    display: inline-block;
+  }
+
+  /* Weight Input Section */
+  .weight-section {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    align-items: end;
+  }
+
+  .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .input-group label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink2);
+  }
+
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--bg);
+    transition: border-color 0.2s;
+  }
+
+  .input-row:focus-within {
+    border-color: var(--accent);
+    background: white;
+  }
+
+  .input-row input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 0.65rem 0.8rem;
+    font-family: 'DM Mono', 'Courier New', Courier, monospace;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--ink);
+    outline: none;
+    width: 0;
+    min-width: 0;
+  }
+
+  .input-row .unit {
+    padding: 0.65rem 0.8rem 0.65rem 0;
+    font-size: 0.8rem;
+    color: var(--ink3);
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+
+  .converted {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--accent-light);
+    border: 1.5px solid #b8d9c2;
+    border-radius: 8px;
+    padding: 0.65rem 0.9rem;
+  }
+
+  .converted .val {
+    font-family: 'DM Mono', 'Courier New', Courier, monospace;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--accent);
+  }
+
+  .converted .unit-label {
+    font-size: 0.8rem;
+    color: var(--accent);
+    opacity: 0.8;
+  }
+
+  .how-it-works {
+    background: var(--gold-light);
+    border: 1px solid #dac97a;
+    border-radius: 8px;
+    padding: 0.9rem 1rem;
+    font-size: 0.8rem;
+    color: #7a6a00;
+    line-height: 1.5;
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+
+  .how-it-works::before {
+    content: "ℹ";
+    font-size: 1rem;
+    flex-shrink: 0;
+    margin-top: -0.05rem;
+  }
+
+  /* Drug Cards */
+  .drugs-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .drug-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: box-shadow 0.2s, border-color 0.2s;
+  }
+
+  .drug-card:hover {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border-color: var(--border-strong);
+  }
+
+  .drug-header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    padding: 1rem 1.25rem 0.75rem;
+    gap: 1rem;
+    border-bottom: 1px solid var(--surface2);
+  }
+
+  .drug-name {
+    font-family: 'DM Serif Display', Georgia, 'Times New Roman', serif;
+    font-size: 1.3rem;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+
+  .drug-sizes-badge {
+    font-family: 'DM Mono', 'Courier New', Courier, monospace;
+    font-size: 0.72rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--ink2);
+    padding: 0.25rem 0.55rem;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+
+  .drug-body {
+    padding: 1rem 1.25rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.75rem;
+  }
+
+  .dose-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 0.85rem;
+    border-radius: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .dose-block::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+
+  .dose-block.low::before { background: var(--pill-low); }
+  .dose-block.med::before { background: var(--pill-med); }
+  .dose-block.high::before { background: var(--pill-high); }
+
+  .dose-tier {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+  .dose-block.low .dose-tier { color: var(--pill-low); }
+  .dose-block.med .dose-tier { color: var(--pill-med); }
+  .dose-block.high .dose-tier { color: var(--pill-high); }
+
+  .dose-rate {
+    font-family: 'DM Mono', 'Courier New', Courier, monospace;
+    font-size: 0.78rem;
+    color: var(--ink3);
+  }
+
+  .dose-mg {
+    font-family: 'DM Mono', 'Courier New', Courier, monospace;
+    font-size: 1.4rem;
+    font-weight: 500;
+    line-height: 1;
+  }
+  .dose-block.low .dose-mg { color: var(--pill-low); }
+  .dose-block.med .dose-mg { color: var(--pill-med); }
+  .dose-block.high .dose-mg { color: var(--pill-high); }
+
+  .dose-unit {
+    font-size: 0.75rem;
+    color: var(--ink3);
+  }
+
+  .dose-rounded {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--ink2);
+    padding-top: 0.3rem;
+    border-top: 1px solid var(--border);
+    margin-top: 0.15rem;
+  }
+
+  .drug-note {
+    padding: 0.7rem 1.25rem 0.9rem;
+    font-size: 0.79rem;
+    color: var(--ink3);
+    line-height: 1.5;
+    border-top: 1px solid var(--surface2);
+    font-style: italic;
+  }
+
+  /* Responsive */
+  @media (max-width: 580px) {
+    .weight-section { grid-template-columns: 1fr; }
+    .drug-body { grid-template-columns: 1fr; }
+    .drug-header { grid-template-columns: 1fr; }
+  }
+
+  /* Footer */
+  footer {
+    margin-top: 2.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.75rem;
+    color: var(--ink3);
+    text-align: center;
+    line-height: 1.6;
+  }
+
+  footer strong { color: var(--warn); }
+
+  .pulse {
+    animation: pulse 0.3s ease;
+  }
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.04); }
+    100% { transform: scale(1); }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="header-top">
+      <div class="title-block">
+        <h1>Behavior Drug <em>Dosage</em> Calculator</h1>
+        <p>Tablet &amp; Capsule — rounded to nearest available size</p>
+      </div>
+      <span class="badge">⚠ Veterinary Use Only</span>
+    </div>
+  </header>
+
+  <section class="weight-section">
+    <div class="input-group">
+      <label>Patient Weight (lbs)</label>
+      <div class="input-row">
+        <input type="number" id="weight-lbs" value="6" min="0.1" step="0.1" placeholder="0.0">
+        <span class="unit">lbs</span>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label>Weight in Kilograms</label>
+      <div class="converted">
+        <span class="val" id="weight-kg">2.73</span>
+        <span class="unit-label">kg</span>
+      </div>
+    </div>
+
+    <div class="how-it-works">
+      Dosages are rounded to the nearest capsule size. For tablets, dosages are rounded to the nearest ¼ or ½ tablet size.
+    </div>
+  </section>
+
+  <div class="drugs-grid" id="drugs-grid">
+    <!-- Populated by JS -->
+  </div>
+
+  <footer>
+    <strong>For veterinary use only.</strong> This calculator is a clinical aid — always verify dosages with a licensed veterinarian before administration. Drug interactions, individual patient factors, and contraindications must be evaluated by a professional.
+  </footer>
+</div>
+
+<script>
+  const drugs = [
+    {
+      name: 'Acepromazine',
+      rates: { low: 0.25, med: 0.5, high: 5 },
+      sizes: [10, 25],
+      sizeType: 'tab',
+      sizesLabel: '10, 25 mg (tab)',
+      note: 'Tranquilizer; no anxiety relief. Do not give as a single drug; combine with other drugs.'
+    },
+    {
+      name: 'Clonidine',
+      rates: { low: 0.01, med: 0.02, high: 0.05 },
+      sizes: [0.2],
+      sizeType: 'tab',
+      sizesLabel: '0.2 mg (tab)',
+      note: '"Anti-adrenaline." Don\'t combine with Clomicalm.'
+    },
+    {
+      name: 'Gabapentin',
+      rates: { low: 10, med: 20, high: 30 },
+      sizes: [100, 300],
+      sizeType: 'cap',
+      sizesLabel: '100, 300 mg (cap)',
+      note: '2 hours before stressors. Twice-daily for behavior, four times daily for pain.'
+    },
+    {
+      name: 'Trazodone',
+      rates: { low: 3.5, med: 7, high: 14 },
+      sizes: [100],
+      sizeType: 'tab',
+      sizesLabel: '100 mg (tab)',
+      note: '2 hours before stressors. Up to 3 times a day.'
+    }
+  ];
+
+  function lbsToKg(lbs) {
+    return lbs / 2.2;
+  }
+
+  function roundTablet(mg, tabSizes) {
+    let best = null;
+    let bestDiff = Infinity;
+    for (const size of tabSizes) {
+      for (let n = 0.25; n <= 20; n += 0.25) {
+        const candidate = size * n;
+        const diff = Math.abs(candidate - mg);
+        if (diff < bestDiff) {
+          bestDiff = diff;
+          best = { size, count: n, total: candidate };
+        }
+      }
+    }
+    return best;
+  }
+
+  function roundCapsule(mg, capSizes) {
+    let best = null;
+    let bestDiff = Infinity;
+    for (const size of capSizes) {
+      for (let n = 1; n <= 20; n++) {
+        const candidate = size * n;
+        const diff = Math.abs(candidate - mg);
+        if (diff < bestDiff) {
+          bestDiff = diff;
+          best = { size, count: n, total: candidate };
+        }
+      }
+    }
+    return best;
+  }
+
+  function formatCount(count) {
+    if (count === 0.25) return '¼';
+    if (count === 0.5) return '½';
+    if (count === 0.75) return '¾';
+    if (count === 1) return '1';
+    if (count === 1.25) return '1¼';
+    if (count === 1.5) return '1½';
+    if (count === 1.75) return '1¾';
+    if (Number.isInteger(count)) return count.toString();
+    return count.toFixed(2);
+  }
+
+  function getRoundedLabel(mg, drug) {
+    const rounded = drug.sizeType === 'cap'
+      ? roundCapsule(mg, drug.sizes)
+      : roundTablet(mg, drug.sizes);
+    if (!rounded) return '—';
+    const unit = drug.sizeType === 'cap' ? 'cap' : 'tab';
+    const countLabel = formatCount(rounded.count);
+    return `${countLabel} × ${rounded.size} mg ${unit} = ${rounded.total.toFixed(2)} mg`;
+  }
+
+  function renderDrugs(kgWeight) {
+    const grid = document.getElementById('drugs-grid');
+    grid.innerHTML = '';
+
+    drugs.forEach(drug => {
+      const doses = {
+        low: drug.rates.low * kgWeight,
+        med: drug.rates.med * kgWeight,
+        high: drug.rates.high * kgWeight
+      };
+
+      const tiers = [
+        { key: 'low', label: 'Low', cls: 'low' },
+        { key: 'med', label: 'Medium', cls: 'med' },
+        { key: 'high', label: 'High', cls: 'high' }
+      ];
+
+      const card = document.createElement('div');
+      card.className = 'drug-card';
+
+      card.innerHTML = `
+        <div class="drug-header">
+          <span class="drug-name">${drug.name}</span>
+          <span class="drug-sizes-badge">${drug.sizesLabel}</span>
+        </div>
+        <div class="drug-body">
+          ${tiers.map(t => {
+            const mg = doses[t.key];
+            const rounded = getRoundedLabel(mg, drug);
+            return `
+            <div class="dose-block ${t.cls}">
+              <span class="dose-tier">${t.label}</span>
+              <span class="dose-rate">${drug.rates[t.key]} mg/kg</span>
+              <span class="dose-mg">${mg.toFixed(3)}</span>
+              <span class="dose-unit">mg calculated</span>
+              <span class="dose-rounded">→ ${rounded}</span>
+            </div>`;
+          }).join('')}
+        </div>
+        <div class="drug-note">${drug.note}</div>
+      `;
+
+      grid.appendChild(card);
+    });
+  }
+
+  function update() {
+    const lbs = parseFloat(document.getElementById('weight-lbs').value) || 0;
+    const kg = lbsToKg(lbs);
+    document.getElementById('weight-kg').textContent = kg.toFixed(4);
+    document.getElementById('weight-kg').parentElement.classList.add('pulse');
+    setTimeout(() => document.getElementById('weight-kg').parentElement.classList.remove('pulse'), 300);
+    renderDrugs(kg);
+    reportHeight();
+  }
+
+  // ── iframe height signaling ──────────────────────────────────────────────
+  // Sends the document's scroll height to the parent page via postMessage so
+  // the embedding iframe can be resized to fit content without scrollbars.
+  // HelpSite.io (and most embed platforms) support this pattern.
+  function reportHeight() {
+    const height = document.documentElement.scrollHeight;
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: 'resize', height: height }, '*');
+    }
+  }
+
+  // Also watch for layout shifts (font load, etc.) and report updated height
+  if (typeof ResizeObserver !== 'undefined') {
+    const ro = new ResizeObserver(() => reportHeight());
+    ro.observe(document.body);
+  }
+
+  document.getElementById('weight-lbs').addEventListener('input', update);
+  update();
+</script>
+</body>
+</html>
